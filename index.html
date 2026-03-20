@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Scoreboard - Politie Academie</title>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
+    <style>
+        :root {
+            --police-blue: #1c2e4a;
+            --police-gold: #c5a059;
+            --police-light: #f0f4f8;
+            --success: #27ae60;
+        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--police-blue); margin: 0; padding: 20px; color: white; text-align: center; }
+        .container { max-width: 900px; margin: auto; }
+        
+        /* Giphy Afbeelding Styling */
+        .header-gif { max-width: 100%; height: auto; border-radius: 8px; border: 4px solid var(--police-gold); box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        
+        h1 { text-transform: uppercase; letter-spacing: 3px; font-size: 2.2rem; margin-bottom: 10px; color: var(--police-gold); }
+        .klas-indicator { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; display: inline-block; margin-bottom: 30px; }
+
+        /* Scoreboard Tabel Styling */
+        #scoreboard { width: 100%; border-collapse: collapse; background: white; color: #333; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        #scoreboard th { background: var(--police-gold); color: var(--police-blue); padding: 15px; text-transform: uppercase; font-weight: bold; }
+        #scoreboard td { padding: 15px; border-bottom: 1px solid #ddd; font-size: 1.2rem; font-weight: bold; }
+        #scoreboard tr:last-child td { border-bottom: none; }
+        
+        /* Highlight voor de koploper */
+        .rank-1 { background-color: #e8f5e9; color: var(--success); }
+        .rank-1 .score { color: var(--success); font-size: 1.5rem; }
+
+        .team-name { text-align: left; padding-left: 30px !important; }
+        .score { font-size: 1.4rem; color: var(--police-blue); }
+        
+        #no-data { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 5px; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <img src="giphy.gif" alt="Police Leaderboard Activity" class="header-gif">
+
+    <h1>Live Leaderboard</h1>
+    <div class="klas-indicator">Monitoring Eenheid: <strong id="current-klas">...</strong></div>
+
+    <div id="no-data" class="hidden">Wachten op actieve teams en scores...</div>
+
+    <table id="scoreboard" class="hidden">
+        <thead>
+            <tr>
+                <th>Rang</th>
+                <th class="team-name">Eenheid Team</th>
+                <th>Score</th>
+            </tr>
+        </thead>
+        <tbody id="score-body">
+            </tbody>
+    </table>
+</div>
+
+<script>
+    // 1. Firebase Configuratie (Zelfde als de studenten-module)
+    const firebaseConfig = {
+        apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew",
+        authDomain: "decoroefening.firebaseapp.com",
+        databaseURL: "https://decoroefening-default-rtdb.europe-west1.firebasedatabase.app",
+        projectId: "decoroefening",
+        storageBucket: "decoroefening.firebasestorage.app",
+        messagingSenderId: "945998495824",
+        appId: "1:945998495824:web:a76dc7519b3b262a021155"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+
+    // 2. Welke klas moeten we tonen? (Dit kun je aanpassen, bijv. via de URL)
+    const huidigeKlas = "alpha"; // Of "bravo", etc.
+    document.getElementById('current-klas').innerText = huidigeKlas.toUpperCase();
+
+    // 3. Luister LIVE naar Firebase teams data
+    const teamsRef = db.ref(`lessen/${huidigeKlas}/teams`);
+    
+    teamsRef.on('value', (snapshot) => {
+        const teamsData = snapshot.val();
+        const scoreBody = document.getElementById('score-body');
+        const scoreboardTable = document.getElementById('scoreboard');
+        const noDataDiv = document.getElementById('no-data');
+
+        // Als er geen teams zijn, toon de "wachten" melding
+        if (!teamsData) {
+            scoreboardTable.classList.add('hidden');
+            noDataDiv.classList.remove('hidden');
+            return;
+        }
+
+        // Als er data is, verberg melding en toon tabel
+        scoreboardTable.classList.remove('hidden');
+        noDataDiv.classList.add('hidden');
+        scoreBody.innerHTML = ''; // Maak de tabel leeg voor de update
+
+        // Converteer object naar een array voor sortering
+        let teamsArray = [];
+        for (let teamKey in teamsData) {
+            teamsArray.push({
+                name: teamKey,
+                score: teamsData[teamKey].score || 0
+            });
+        }
+
+        // Sorteer de array: hoogste score bovenaan
+        teamsArray.sort((a, b) => b.score - a.score);
+
+        // Bouw de tabelrijen
+        teamsArray.forEach((team, index) => {
+            const row = document.createElement('tr');
+            
+            // Highlight de nummer 1
+            if (index === 0) {
+                row.classList.add('rank-1');
+            }
+
+            row.innerHTML = `
+                <td>#${index + 1}</td>
+                <td class="team-name">${team.name}</td>
+                <td class="score">${team.score} pnt</td>
+            `;
+            scoreBody.appendChild(row);
+        });
+    });
+</script>
+
+</body>
+</html>
