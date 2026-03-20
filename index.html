@@ -3,133 +3,231 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Live Scoreboard - Politie Academie</title>
+    <title>Politie Academie - Tekstverbanden Master</title>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-database-compat.js"></script>
     <style>
-        :root {
-            --police-blue: #1c2e4a;
-            --police-gold: #c5a059;
-            --police-light: #f0f4f8;
-            --success: #27ae60;
-        }
-        body { font-family: 'Segoe UI', sans-serif; background: var(--police-blue); margin: 0; padding: 20px; color: white; text-align: center; }
-        .container { max-width: 900px; margin: auto; }
+        :root { --p-blue: #1c2e4a; --p-gold: #c5a059; --p-light: #f4f7f9; --danger: #e74c3c; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--p-blue); margin: 0; padding: 10px; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 10px; max-width: 600px; margin: 20px auto; border-top: 6px solid var(--p-gold); }
+        .hidden { display: none; }
+        h1 { color: var(--p-blue); text-transform: uppercase; text-align: center; font-size: 1.2rem; }
         
-        /* Giphy Afbeelding Styling */
-        .header-gif { max-width: 100%; height: auto; border-radius: 8px; border: 4px solid var(--police-gold); box-shadow: 0 4px 15px rgba(0,0,0,0.5); margin-bottom: 20px; }
+        /* Specifieke elementen */
+        .zin-box { background: var(--p-blue); color: white; padding: 15px; border-radius: 8px; text-align: center; margin: 15px 0; font-weight: bold; }
+        .options { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        button { padding: 12px; cursor: pointer; border: 2px solid var(--p-blue); background: white; color: var(--p-blue); font-weight: bold; border-radius: 6px; }
+        button.primary { background: var(--p-blue); color: white; width: 100%; margin-top: 10px; }
         
-        h1 { text-transform: uppercase; letter-spacing: 3px; font-size: 2.2rem; margin-bottom: 10px; color: var(--police-gold); }
-        .klas-indicator { background: rgba(255,255,255,0.1); padding: 10px; border-radius: 5px; display: inline-block; margin-bottom: 30px; }
-
-        /* Scoreboard Tabel Styling */
-        #scoreboard { width: 100%; border-collapse: collapse; background: white; color: #333; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
-        #scoreboard th { background: var(--police-gold); color: var(--police-blue); padding: 15px; text-transform: uppercase; font-weight: bold; }
-        #scoreboard td { padding: 15px; border-bottom: 1px solid #ddd; font-size: 1.2rem; font-weight: bold; }
-        #scoreboard tr:last-child td { border-bottom: none; }
+        /* Scoreboard styling */
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; border-bottom: 1px solid #ddd; text-align: left; }
+        .rank-1 { color: #27ae60; font-weight: bold; }
         
-        /* Highlight voor de koploper */
-        .rank-1 { background-color: #e8f5e9; color: var(--success); }
-        .rank-1 .score { color: var(--success); font-size: 1.5rem; }
-
-        .team-name { text-align: left; padding-left: 30px !important; }
-        .score { font-size: 1.4rem; color: var(--police-blue); }
-        
-        #no-data { background: rgba(255,255,255,0.1); padding: 20px; border-radius: 5px; font-style: italic; }
+        img.main-img { width: 100%; max-width: 250px; display: block; margin: 0 auto 15px; border-radius: 5px; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <img src="giphy.gif" alt="Police Leaderboard Activity" class="header-gif">
+    <div id="role-screen" class="card">
+        <h1>Selecteer Rol</h1>
+        <button class="primary" onclick="initRole('student')">Ik ben een Student</button>
+        <button class="primary" onclick="initRole('docent')" style="background:#555;">Ik ben de Docent</button>
+        <button class="primary" onclick="initRole('scoreboard')" style="background:var(--p-gold); color:black;">Open Leaderboard</button>
+    </div>
 
-    <h1>Live Leaderboard</h1>
-    <div class="klas-indicator">Monitoring Eenheid: <strong id="current-klas">...</strong></div>
+    <div id="student-screen" class="card hidden">
+        <img src="invisible-friends-crime-scene.gif" class="main-img" alt="Crime Scene">
+        <h1>Briefing: Aanmelden</h1>
+        <input type="text" id="student-name" placeholder="Je naam" style="width:100%; padding:10px; margin-bottom:10px; box-sizing:border-box;">
+        <select id="klas-select" style="width:100%; padding:10px; margin-bottom:10px;">
+            <option value="alpha">Eenheid Alpha</option>
+            <option value="bravo">Eenheid Bravo</option>
+        </select>
+        <button class="primary" onclick="loginStudent()">MELDEN BIJ CENTRALE</button>
+        <div id="game-area" class="hidden">
+            <hr>
+            <div id="team-tag" style="color:var(--danger); font-weight:bold; text-align:center;"></div>
+            <div id="instr" style="font-size:0.9rem; font-style:italic; margin-top:10px;"></div>
+            <div class="zin-box" id="zin-display"></div>
+            <div class="options" id="options-container"></div>
+            <div id="feedback" style="text-align:center; margin-top:10px;"></div>
+        </div>
+    </div>
 
-    <div id="no-data" class="hidden">Wachten op actieve teams en scores...</div>
+    <div id="docent-screen" class="card hidden">
+        <h1>Docent Dashboard</h1>
+        <select id="docent-klas" style="width:100%; padding:10px; margin-bottom:10px;">
+            <option value="alpha">Eenheid Alpha</option>
+            <option value="bravo">Eenheid Bravo</option>
+        </select>
+        <p>Aanwezigen: <span id="presence-list">Geen</span></p>
+        <button class="primary" onclick="verdeelTeams(2)">Verdeel in 2 Teams</button>
+        <button class="primary" onclick="verdeelTeams(3)">Verdeel in 3 Teams</button>
+        <button class="primary" onclick="resetGame()" style="background:var(--danger);">Reset Klas Data</button>
+    </div>
 
-    <table id="scoreboard" class="hidden">
-        <thead>
-            <tr>
-                <th>Rang</th>
-                <th class="team-name">Eenheid Team</th>
-                <th>Score</th>
-            </tr>
-        </thead>
-        <tbody id="score-body">
-            </tbody>
-    </table>
+    <div id="scoreboard-screen" class="card hidden" style="max-width:800px;">
+        <img src="giphy.gif" class="main-img" alt="Leaderboard">
+        <h1>Live Leaderboard</h1>
+        <div id="score-table-container"></div>
+    </div>
 </div>
 
 <script>
-    // 1. Firebase Configuratie (Zelfde als de studenten-module)
-    const firebaseConfig = {
-        apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew",
-        authDomain: "decoroefening.firebaseapp.com",
-        databaseURL: "https://decoroefening-default-rtdb.europe-west1.firebasedatabase.app",
-        projectId: "decoroefening",
-        storageBucket: "decoroefening.firebasestorage.app",
-        messagingSenderId: "945998495824",
-        appId: "1:945998495824:web:a76dc7519b3b262a021155"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.database();
+// --- FIREBASE CONFIG ---
+const firebaseConfig = {
+    apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew",
+    authDomain: "decoroefening.firebaseapp.com",
+    databaseURL: "https://decoroefening-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "decoroefening",
+    storageBucket: "decoroefening.firebasestorage.app",
+    messagingSenderId: "945998495824",
+    appId: "1:945998495824:web:a76dc7519b3b262a021155"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
 
-    // 2. Welke klas moeten we tonen? (Dit kun je aanpassen, bijv. via de URL)
-    const huidigeKlas = "alpha"; // Of "bravo", etc.
-    document.getElementById('current-klas').innerText = huidigeKlas.toUpperCase();
+// --- LEERSTOF (40 ZINNEN) ---
+const leerstof = [
+    { type: "verband", zin: "Eerst zekeren we de plaats delict, daarna start de technische recherche.", correct: "Volgorde van tijd", fout: ["Conclusie", "Voorbeeld", "Doel-middel"] },
+    { type: "verband", zin: "De verdachte droeg een bivakmuts; daarom konden we hem niet herkennen.", correct: "Oorzaak en gevolg", fout: ["Opsomming", "Voorbeeld", "Doel-middel"] },
+    { type: "verband", zin: "De agent trok zijn taser om de vluchtende verdachte te stoppen.", correct: "Doel-middel", fout: ["Conclusie", "Oorzaak en gevolg", "Voorbeeld"] },
+    { type: "verband", zin: "De surveillanten controleren op snelheid, gordels en ook op alcoholgebruik.", correct: "Opsomming", fout: ["Doel-middel", "Oorzaak en gevolg", "Conclusie"] },
+    { type: "verband", zin: "Kortom, de inval was een groot succes door de goede voorbereiding.", correct: "Conclusie", fout: ["Volgorde van tijd", "Voorbeeld", "Opsomming"] },
+    { type: "verband", zin: "Veel agenten gebruiken geweldsmiddelen, denk aan de wapenstok en pepperspray.", correct: "Voorbeeld", fout: ["Volgorde van tijd", "Opsomming", "Doel-middel"] },
+    { type: "verband", zin: "Nadat de melding binnenkwam, rukten drie eenheden direct uit.", correct: "Volgorde van tijd", fout: ["Opsomming", "Conclusie", "Doel-middel"] },
+    { type: "verband", zin: "Het bewijs is onomstotelijk; hieruit volgt dat de verdachte schuldig is.", correct: "Conclusie", fout: ["Voorbeeld", "Volgorde van tijd", "Oorzaak en gevolg"] },
+    { type: "verband", zin: "Bij een arrestatie moet je de rechten voorlezen en tevens de handboeien omdoen.", correct: "Opsomming", fout: ["Doel-middel", "Conclusie", "Volgorde van tijd"] },
+    { type: "verband", zin: "Sommige overtredingen zijn zwaar, zoals het rijden onder invloed.", correct: "Voorbeeld", fout: ["Oorzaak en gevolg", "Opsomming", "Doel-middel"] },
+    { type: "verband", zin: "De rechercheur gebruikt een vergrootglas zodat hij de vingerafdrukken ziet.", correct: "Doel-middel", fout: ["Conclusie", "Volgorde van tijd", "Voorbeeld"] },
+    { type: "verband", zin: "Doordat de getuige een kenteken had genoteerd, was de dader snel gepakt.", correct: "Oorzaak en gevolg", fout: ["Opsomming", "Doel-middel", "Conclusie"] },
+    { type: "verband", zin: "De wijkagent praat met de jeugd terwijl zijn collega een proces-verbaal schrijft.", correct: "Volgorde van tijd", fout: ["Voorbeeld", "Oorzaak en gevolg", "Opsomming"] },
+    { type: "verband", zin: "Al met al was er voldoende bewijs om de verdachte langer vast te houden.", correct: "Conclusie", fout: ["Doel-middel", "Opsomming", "Volgorde van tijd"] },
+    { type: "verband", zin: "Tijdens de actie waren er hondengeleiders, ME-ers en bovendien drones aanwezig.", correct: "Opsomming", fout: ["Voorbeeld", "Conclusie", "Oorzaak en gevolg"] },
+    { type: "verband", zin: "Er zijn diverse opsporingsmethoden, zoals het afluisteren van telefoons.", correct: "Voorbeeld", fout: ["Doel-middel", "Volgorde van tijd", "Opsomming"] },
+    { type: "verband", zin: "De ME zette de straat af door middel van verplaatsbare dranghekken.", correct: "Doel-middel", fout: ["Oorzaak en gevolg", "Conclusie", "Voorbeeld"] },
+    { type: "verband", zin: "Ten gevolge van de gladheid vonden er meerdere aanrijdingen plaats.", correct: "Oorzaak en gevolg", fout: ["Volgorde van tijd", "Opsomming", "Doel-middel"] },
+    { type: "verband", zin: "Voordat je een woning betreedt, moet je een machtiging kunnen tonen.", correct: "Volgorde van tijd", fout: ["Conclusie", "Voorbeeld", "Opsomming"] },
+    { type: "verband", zin: "De verdachte verzette zich heftig, waardoor de agenten hem moesten tackelen.", correct: "Oorzaak en gevolg", fout: ["Doel-middel", "Opsomming", "Voorbeeld"] },
+    { type: "verband", zin: "De surveillancewagen bleef op afstand rijden, zodat de verdachte niet gevolgd werd.", correct: "Doel-middel", fout: ["Opsomming", "Volgorde van tijd", "Voorbeeld"] },
+    { type: "gat", zin: "De verdachte moet worden verhoord, ... hij in de cel wordt geplaatst.", correct: "voordat", fout: ["kortom", "zodat", "bijvoorbeeld"] },
+    { type: "gat", zin: "Er zijn veel bewijsstukken, ... bloedsporen en vingerafdrukken.", correct: "zoals", fout: ["nadat", "daartoe", "immers"] },
+    { type: "gat", zin: "De agent trok zijn taser ... de verdachte te kunnen overmeesteren.", correct: "om", fout: ["want", "daarna", "concluderend"] },
+    { type: "gat", zin: "De straat is afgezet ... een ernstig ongeval.", correct: "vanwege", fout: ["terwijl", "kortom", "zodat"] },
+    { type: "gat", zin: "We hebben de beelden bekeken; ... weten we wie de dader is.", correct: "daardoor", fout: ["ook", "bijvoorbeeld", "om te"] },
+    { type: "gat", zin: "De surveillant controleert de papieren ... zijn collega de auto doorzoekt.", correct: "terwijl", fout: ["dus", "ter illustratie", "opdat"] },
+    { type: "gat", zin: "De dief stal een fiets ... een auto en een scooter.", correct: "en ook", fout: ["nadat", "zodat", "hieruit volgt"] },
+    { type: "gat", zin: "Het onderzoek is afgerond; ... is er genoeg bewijs voor de rechter.", correct: "dus", fout: ["voor", "ten eerste", "denk aan"] },
+    { type: "gat", zin: "De ME voert een actie uit ... de orde te herstellen.", correct: "opdat", fout: ["immers", "zo", "daarna"] },
+    { type: "gat", zin: "Er is ingebroken, ... de bewoners de achterdeur open lieten staan.", correct: "omdat", fout: ["kortom", "nadat", "voordat"] },
+    { type: "gat", zin: "De officier van justitie eist een straf, ... de wet dit voorschrijft.", correct: "want", fout: ["terwijl", "daardoor", "zo"] },
+    { type: "gat", zin: "Je stelt eerst de veiligheid veilig ... je hulp verleent.", correct: "voordat", fout: ["dus", "bijvoorbeeld", "bovendien"] },
+    { type: "gat", zin: "Er zijn diverse eenheden, ... de hondenbrigade en de bereden politie.", correct: "denk aan", fout: ["zodat", "nadat", "want"] },
+    { type: "gat", zin: "De weersomstandigheden zijn slecht, ... de weginspecteur extra alert is.", correct: "waardoor", fout: ["ten eerste", "om te", "zoals"] },
+    { type: "gat", zin: "Hij heeft een snelheidsovertreding begaan; ... krijgt hij een boete.", correct: "daarom", fout: ["ook", "voordat", "zo"] },
+    { type: "gat", zin: "De getuige was bang, ... hij durfde niet te verklaren.", correct: "dus", fout: ["terwijl", "zoals", "om te"] },
+    { type: "gat", zin: "De politiehelikopter hangt in de lucht ... de voortvluchtige te spotten.", correct: "om", fout: ["kortom", "doordat", "nadat"] },
+    { type: "gat", zin: "Er is veel schade aan de auto, ... bij de linker koplamp.", correct: "bijvoorbeeld", fout: ["nadat", "daarom", "zodat"] },
+    { type: "gat", zin: "De agenten gebruikten pepperspray, ... de verdachte zich verzette.", correct: "doordat", fout: ["kortom", "daarna", "ten tweede"] },
+    { type: "gat", zin: "De wijkagent stopt zijn ronde ... de melding op de mobilofoon.", correct: "door", fout: ["terwijl", "zo", "al met al"] },
+    { type: "gat", zin: "De arrestantenbus blokkeerde de vluchtweg, ... de verdachten geen kant op konden.", correct: "waardoor", fout: ["terwijl", "ten eerste", "zoals"] }
+];
 
-    // 3. Luister LIVE naar Firebase teams data
-    const teamsRef = db.ref(`lessen/${huidigeKlas}/teams`);
-    
-    teamsRef.on('value', (snapshot) => {
-        const teamsData = snapshot.val();
-        const scoreBody = document.getElementById('score-body');
-        const scoreboardTable = document.getElementById('scoreboard');
-        const noDataDiv = document.getElementById('no-data');
+let globalName, globalKlas, globalTeam;
 
-        // Als er geen teams zijn, toon de "wachten" melding
-        if (!teamsData) {
-            scoreboardTable.classList.add('hidden');
-            noDataDiv.classList.remove('hidden');
-            return;
-        }
+function initRole(role) {
+    document.getElementById('role-screen').classList.add('hidden');
+    document.getElementById(role + '-screen').classList.remove('hidden');
+    if(role === 'docent') initDocent();
+    if(role === 'scoreboard') initScoreboard();
+}
 
-        // Als er data is, verberg melding en toon tabel
-        scoreboardTable.classList.remove('hidden');
-        noDataDiv.classList.add('hidden');
-        scoreBody.innerHTML = ''; // Maak de tabel leeg voor de update
-
-        // Converteer object naar een array voor sortering
-        let teamsArray = [];
-        for (let teamKey in teamsData) {
-            teamsArray.push({
-                name: teamKey,
-                score: teamsData[teamKey].score || 0
-            });
-        }
-
-        // Sorteer de array: hoogste score bovenaan
-        teamsArray.sort((a, b) => b.score - a.score);
-
-        // Bouw de tabelrijen
-        teamsArray.forEach((team, index) => {
-            const row = document.createElement('tr');
-            
-            // Highlight de nummer 1
-            if (index === 0) {
-                row.classList.add('rank-1');
+// --- STUDENT LOGICA ---
+function loginStudent() {
+    globalName = document.getElementById('student-name').value;
+    globalKlas = document.getElementById('klas-select').value;
+    if(!globalName) return alert("Naam invullen!");
+    db.ref(`lessen/${globalKlas}/presence/${globalName}`).set(true);
+    db.ref(`lessen/${globalKlas}/teams`).on('value', s => {
+        const teams = s.val();
+        for(let t in teams) {
+            if(teams[t].members && teams[t].members.includes(globalName)) {
+                globalTeam = t;
+                document.getElementById('game-area').classList.remove('hidden');
+                document.getElementById('team-tag').innerText = "Eenheid: " + t;
+                startStudentGame();
             }
+        }
+    });
+}
 
-            row.innerHTML = `
-                <td>#${index + 1}</td>
-                <td class="team-name">${team.name}</td>
-                <td class="score">${team.score} pnt</td>
-            `;
-            scoreBody.appendChild(row);
+function startStudentGame() {
+    db.ref(`lessen/${globalKlas}/currentQuestion`).on('value', s => {
+        const idx = s.val() || 0;
+        const v = leerstof[idx];
+        document.getElementById('zin-display').innerText = v.zin;
+        document.getElementById('instr').innerText = (v.type === "verband") ? "OVERLEG: Welk tekstverband?" : "OVERLEG: Welk woord op de (...) ?";
+        
+        const cont = document.getElementById('options-container');
+        cont.innerHTML = "";
+        let opts = (globalName.length % 2 === 0) ? [v.correct, v.fout[0]] : [v.fout[1], v.fout[2]];
+        opts.sort().forEach(o => {
+            let b = document.createElement('button');
+            b.innerText = o;
+            b.onclick = () => {
+                if(o === v.correct) {
+                    db.ref(`lessen/${globalKlas}/teams/${globalTeam}/score`).transaction(sc => (sc||0)+1);
+                    db.ref(`lessen/${globalKlas}/currentQuestion`).set(idx + 1);
+                } else { document.getElementById('feedback').innerText = "FOUT! Overleg!"; }
+            };
+            cont.appendChild(b);
         });
     });
-</script>
+}
 
+// --- DOCENT LOGICA ---
+function initDocent() {
+    setInterval(() => {
+        const klas = document.getElementById('docent-klas').value;
+        db.ref(`lessen/${klas}/presence`).on('value', s => {
+            document.getElementById('presence-list').innerText = s.val() ? Object.keys(s.val()).join(", ") : "Geen";
+        });
+    }, 2000);
+}
+
+function verdeelTeams(aantal) {
+    const klas = document.getElementById('docent-klas').value;
+    db.ref(`lessen/${klas}/presence`).once('value', s => {
+        const names = Object.keys(s.val() || {});
+        names.sort(() => Math.random() - 0.5);
+        let teams = {};
+        for(let i=1; i<=aantal; i++) teams["Team "+i] = { members: [], score: 0 };
+        names.forEach((n, i) => teams["Team "+(i%aantal + 1)].members.push(n));
+        db.ref(`lessen/${klas}/teams`).set(teams);
+        db.ref(`lessen/${klas}/currentQuestion`).set(0);
+    });
+}
+
+function resetGame() {
+    const klas = document.getElementById('docent-klas').value;
+    db.ref(`lessen/${klas}`).remove();
+}
+
+// --- SCOREBOARD LOGICA ---
+function initScoreboard() {
+    const klas = "alpha"; // Of laat de docent dit kiezen
+    db.ref(`lessen/${klas}/teams`).on('value', s => {
+        const data = s.val();
+        let html = "<table><tr><th>Team</th><th>Score</th></tr>";
+        for(let t in data) {
+            html += `<tr><td>${t}</td><td>${data[t].score || 0} pnt</td></tr>`;
+        }
+        html += "</table>";
+        document.getElementById('score-table-container').innerHTML = html;
+    });
+}
+</script>
 </body>
 </html>
