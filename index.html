@@ -32,6 +32,13 @@
         th { background: var(--p-blue); color: white; }
         .rank-1 { background: #fff9e6; font-weight: bold; border: 2px solid var(--p-gold); }
         .win-banner { background: gold; color: black; padding: 5px 10px; border-radius: 4px; animation: blink 1s infinite; }
+        
+        /* Nieuwe stijlen voor de monitor */
+        .monitor-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 15px; }
+        .team-stat-card { border: 1px solid #ddd; padding: 12px; border-radius: 8px; background: #f9f9f9; }
+        .progress-bar-bg { background: #eee; height: 12px; border-radius: 6px; margin: 10px 0; overflow: hidden; border: 1px solid #ccc; }
+        .progress-bar-fill { background: var(--p-gold); height: 100%; transition: width 0.5s ease; }
+
         @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
         @media (min-width: 600px) { .briefing-container { grid-template-columns: 1fr 1fr; } }
     </style>
@@ -102,7 +109,7 @@
 
     <div id="docent-screen" class="card hidden">
         <h1>Command Dashboard</h1>
-        <select id="docent-klas">
+        <select id="docent-klas" onchange="initDocent()">
             <option value="alpha">Eenheid Alpha</option><option value="bravo">Eenheid Bravo</option>
             <option value="charlie">Eenheid Charlie</option><option value="delta">Eenheid Delta</option>
             <option value="echo">Eenheid Echo</option><option value="foxtrot">Eenheid Foxtrot</option>
@@ -113,6 +120,14 @@
         <p>Aanwezige agenten: <span id="presence-list" style="font-weight:bold;">...</span></p>
         <button class="primary" onclick="verdeelTeams(2)">Start Missie: 2 Teams</button>
         <button class="primary" onclick="verdeelTeams(3)">Start Missie: 3 Teams</button>
+
+        <div id="live-monitor" style="margin-top: 30px; border-top: 2px solid var(--p-gold); padding-top: 20px;">
+            <h3>Live Operatie Status</h3>
+            <div id="team-status-container" class="monitor-grid">
+                <p>Geen actieve missie.</p>
+            </div>
+        </div>
+
         <button class="primary" onclick="resetGame()" style="background:var(--danger); margin-top:40px;">Reset Alle Eenheid Data</button>
     </div>
 
@@ -131,7 +146,7 @@
 </div>
 
 <script>
-// --- CONFIG (Blijft gelijk) ---
+// --- CONFIG ---
 const firebaseConfig = {
     apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew",
     authDomain: "decoroefening.firebaseapp.com",
@@ -144,8 +159,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// --- LEERSTOF (Jouw originele data) ---
-const leerstofRaw = [
+// --- LEERSTOF ---
+const leerstof = [
     { type: "verband", zin: "Eerst zekerden we de plaats delict, daarna startte de recherche het onderzoek.", correct: "Volgorde van tijd", fout: ["Conclusie", "Voorbeeld", "Doel-middel"] },
     { type: "verband", zin: "De verdachte droeg een bivakmuts; daarom konden we hem niet herkennen.", correct: "Oorzaak en gevolg", fout: ["Opsomming", "Voorbeeld", "Doel-middel"] },
     { type: "verband", zin: "De agent trok zijn taser om de vluchtende verdachte te stoppen.", correct: "Doel-middel", fout: ["Conclusie", "Oorzaak en gevolg", "Voorbeeld"] },
@@ -187,7 +202,6 @@ const leerstofRaw = [
     { type: "gat", zin: "De agenten gebruikten pepperspray, ... de verdachte zich verzette.", correct: "doordat", fout: ["kortom", "daarna", "ten tweede"] },
     { type: "gat", zin: "De wijkagent stopte zijn ronde ... de dringende melding op de mobilofoon.", correct: "door", fout: ["terwijl", "zo", "al met al"] }
 ];
-const leerstof = leerstofRaw; // Geen random shuffle hier om sync te houden
 
 let globalName, globalKlas, globalTeam, winAnnounced = false;
 
@@ -271,13 +285,43 @@ function startStudentGame() {
 }
 
 function initDocent() {
-    setInterval(() => {
-        const klas = document.getElementById('docent-klas').value;
-        db.ref(`lessen/${klas}/presence`).on('value', s => {
-            const list = s.val() ? Object.keys(s.val()).join(", ") : "Wachten op agenten...";
-            document.getElementById('presence-list').innerText = list;
-        });
-    }, 2000);
+    const klas = document.getElementById('docent-klas').value;
+    
+    // Aanwezigheid monitor
+    db.ref(`lessen/${klas}/presence`).on('value', s => {
+        const list = s.val() ? Object.keys(s.val()).join(", ") : "Wachten op agenten...";
+        document.getElementById('presence-list').innerText = list;
+    });
+
+    // Nieuw: Team & Voortgang monitor in het dashboard
+    db.ref(`lessen/${klas}/teams`).on('value', s => {
+        const teams = s.val();
+        const container = document.getElementById('team-status-container');
+        if(!teams) {
+            container.innerHTML = "<p>Geen actieve eenheden.</p>";
+            return;
+        }
+
+        let html = "";
+        for(let teamName in teams) {
+            const t = teams[teamName];
+            const sc = t.score || 0;
+            const perc = Math.min((sc / 20) * 100, 100);
+            const leden = t.members ? t.members.join(", ") : "Geen";
+            
+            html += `
+                <div class="team-stat-card">
+                    <strong style="color:var(--p-blue)">${teamName}</strong><br>
+                    <small>Bezetting: ${leden}</small>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width:${perc}%"></div>
+                    </div>
+                    <small>Status: ${sc} / 20 opgelost</small>
+                </div>
+            `;
+        }
+        container.innerHTML = html;
+    });
 }
 
 function verdeelTeams(aantal) {
