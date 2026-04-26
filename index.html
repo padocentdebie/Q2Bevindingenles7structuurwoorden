@@ -71,23 +71,30 @@
 
     <div id="student-screen" class="card hidden">
         <img src="invisible-friends-crime-scene.gif" class="main-img">
-        <h1>Aanmelden Eenheid</h1>
-        <input type="text" id="student-name" placeholder="Je roepnaam">
-        <select id="klas-select">
-            <option value="alpha">Eenheid Alpha (A)</option><option value="bravo">Eenheid Bravo (B)</option>
-            <option value="charlie">Eenheid Charlie (C)</option><option value="delta">Eenheid Delta (D)</option>
-            <option value="echo">Eenheid Echo (E)</option><option value="foxtrot">Eenheid Foxtrot (F)</option>
-            <option value="golf">Eenheid Golf (G)</option><option value="hotel">Eenheid Hotel (H)</option>
-            <option value="india">Eenheid India (I)</option><option value="juliett">Eenheid Juliett (J)</option>
-            <option value="kilo">Eenheid Kilo (K)</option><option value="lima">Eenheid Lima (L)</option>
-            <option value="mike">Eenheid Mike (M)</option>
-        </select>
-        <button class="primary" onclick="loginStudent()">MELDEN BIJ CENTRALE</button>
+        <h1 id="student-title">Aanmelden Eenheid</h1>
+        <div id="student-login-fields">
+            <input type="text" id="student-name" placeholder="Je roepnaam">
+            <select id="klas-select">
+                <option value="alpha">Eenheid Alpha (A)</option>
+                <option value="bravo">Eenheid Bravo (B)</option>
+                <option value="charlie">Eenheid Charlie (C)</option>
+                <option value="delta">Eenheid Delta (D)</option>
+                <option value="echo">Eenheid Echo (E)</option>
+                <option value="foxtrot">Eenheid Foxtrot (F)</option>
+                <option value="golf">Eenheid Golf (G)</option>
+                <option value="hotel">Eenheid Hotel (H)</option>
+                <option value="juliett">Eenheid Juliett (J)</option>
+                <option value="kilo">Eenheid Kilo (K)</option>
+                <option value="lima">Eenheid Lima (L)</option>
+                <option value="mike">Eenheid Mike (M)</option>
+            </select>
+            <button class="primary" onclick="loginStudent()">MELDEN BIJ CENTRALE</button>
+        </div>
         
         <div id="game-area" class="hidden">
             <div id="team-tag" style="color:var(--danger); font-weight:bold; text-align:center; margin-top:10px;"></div>
             <p id="instr" style="font-size:0.9rem; font-style:italic; text-align:center;"></p>
-            <div class="zin-box" id="zin-display">Wachten op startsignaal...</div>
+            <div class="zin-box" id="zin-display">Wachten op team-indeling door commandant...</div>
             <div class="options" id="options-container"></div>
             <div id="feedback" style="text-align:center; margin-top:15px; font-weight:bold;"></div>
         </div>
@@ -100,9 +107,8 @@
             <option value="charlie">Eenheid Charlie</option><option value="delta">Eenheid Delta</option>
             <option value="echo">Eenheid Echo</option><option value="foxtrot">Eenheid Foxtrot</option>
             <option value="golf">Eenheid Golf</option><option value="hotel">Eenheid Hotel</option>
-            <option value="india">Eenheid India</option><option value="juliett">Eenheid Juliett</option>
-            <option value="kilo">Eenheid Kilo</option><option value="lima">Eenheid Lima</option>
-            <option value="mike">Eenheid Mike</option>
+            <option value="juliett">Eenheid Juliett</option><option value="kilo">Eenheid Kilo</option>
+            <option value="lima">Eenheid Lima</option><option value="mike">Eenheid Mike</option>
         </select>
         <p>Aanwezige agenten: <span id="presence-list" style="font-weight:bold;">...</span></p>
         <button class="primary" onclick="verdeelTeams(2)">Start Missie: 2 Teams</button>
@@ -117,16 +123,15 @@
             <option value="charlie">Charlie</option><option value="delta">Delta</option>
             <option value="echo">Echo</option><option value="foxtrot">Foxtrot</option>
             <option value="golf">Golf</option><option value="hotel">Hotel</option>
-            <option value="india">India</option><option value="juliett">Juliett</option>
-            <option value="kilo">Kilo</option><option value="lima">Lima</option>
-            <option value="mike">Mike</option>
+            <option value="juliett">Juliett</option><option value="kilo">Kilo</option>
+            <option value="lima">Lima</option><option value="mike">Mike</option>
         </select>
         <div id="score-table-container"></div>
     </div>
 </div>
 
 <script>
-// --- CONFIG ---
+// --- CONFIG (Blijft gelijk) ---
 const firebaseConfig = {
     apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew",
     authDomain: "decoroefening.firebaseapp.com",
@@ -139,9 +144,8 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// --- DE 40 ZINNEN IN DE OVT (FILMISCH) ---
+// --- LEERSTOF (Jouw originele data) ---
 const leerstofRaw = [
-    // TEKSTVERBANDEN (20 zinnen)
     { type: "verband", zin: "Eerst zekerden we de plaats delict, daarna startte de recherche het onderzoek.", correct: "Volgorde van tijd", fout: ["Conclusie", "Voorbeeld", "Doel-middel"] },
     { type: "verband", zin: "De verdachte droeg een bivakmuts; daarom konden we hem niet herkennen.", correct: "Oorzaak en gevolg", fout: ["Opsomming", "Voorbeeld", "Doel-middel"] },
     { type: "verband", zin: "De agent trok zijn taser om de vluchtende verdachte te stoppen.", correct: "Doel-middel", fout: ["Conclusie", "Oorzaak en gevolg", "Voorbeeld"] },
@@ -162,8 +166,6 @@ const leerstofRaw = [
     { type: "verband", zin: "Ten gevolge van de gladheid vonden er die nacht veel aanrijdingen plaats.", correct: "Oorzaak en gevolg", fout: ["Volgorde van tijd", "Opsomming", "Doel-middel"] },
     { type: "verband", zin: "Voordat de agenten de woning betraden, toonden zij een machtiging.", correct: "Volgorde van tijd", fout: ["Conclusie", "Voorbeeld", "Opsomming"] },
     { type: "verband", zin: "De verdachte verzette zich heftig, waardoor de agenten hem tackelden.", correct: "Oorzaak en gevolg", fout: ["Doel-middel", "Opsomming", "Voorbeeld"] },
-
-    // INVULZINNEN / GATEN (20 zinnen)
     { type: "gat", zin: "De verdachte werd verhoord, ... hij in de cel werd geplaatst.", correct: "voordat", fout: ["kortom", "zodat", "bijvoorbeeld"] },
     { type: "gat", zin: "Er waren veel bewijsstukken, ... bloedsporen en vingerafdrukken.", correct: "zoals", fout: ["nadat", "daartoe", "immers"] },
     { type: "gat", zin: "De agent trok zijn taser ... de verdachte te kunnen overmeesteren.", correct: "om", fout: ["want", "daarna", "concluderend"] },
@@ -185,7 +187,8 @@ const leerstofRaw = [
     { type: "gat", zin: "De agenten gebruikten pepperspray, ... de verdachte zich verzette.", correct: "doordat", fout: ["kortom", "daarna", "ten tweede"] },
     { type: "gat", zin: "De wijkagent stopte zijn ronde ... de dringende melding op de mobilofoon.", correct: "door", fout: ["terwijl", "zo", "al met al"] }
 ];
-const leerstof = leerstofRaw.sort(() => Math.random() - 0.5);
+const leerstof = leerstofRaw; // Geen random shuffle hier om sync te houden
+
 let globalName, globalKlas, globalTeam, winAnnounced = false;
 
 // --- CORE FUNCTIONS ---
@@ -198,31 +201,35 @@ function initRole(role) {
     document.getElementById('role-screen').classList.add('hidden');
     document.getElementById(role + '-screen').classList.remove('hidden');
     if(role === 'docent') initDocent();
-    if(role === 'scoreboard') updateScoreboardView('alpha');
 }
 
 function loginStudent() {
-    globalName = document.getElementById('student-name').value;
+    globalName = document.getElementById('student-name').value.trim();
     globalKlas = document.getElementById('klas-select').value;
     if(!globalName) return alert("Voer je roepnaam in!");
+    
     db.ref(`lessen/${globalKlas}/presence/${globalName}`).set(true);
+    
+    document.getElementById('student-login-fields').classList.add('hidden');
+    document.getElementById('student-title').innerText = "Status: Stand-by (" + globalName + ")";
+    document.getElementById('game-area').classList.remove('hidden');
+
     db.ref(`lessen/${globalKlas}/teams`).on('value', s => {
         const teams = s.val();
+        if(!teams) return;
         for(let t in teams) {
             if(teams[t].members && teams[t].members.includes(globalName)) {
                 globalTeam = t;
-                document.getElementById('game-area').classList.remove('hidden');
-                document.getElementById('student-name').classList.add('hidden');
-                document.getElementById('klas-select').classList.add('hidden');
-                document.querySelector('#student-screen button').classList.add('hidden');
                 document.getElementById('team-tag').innerText = "UNIT: " + t;
                 startStudentGame();
+                break;
             }
         }
     });
 }
 
 function startStudentGame() {
+    db.ref(`lessen/${globalKlas}/currentQuestion`).off();
     db.ref(`lessen/${globalKlas}/currentQuestion`).on('value', s => {
         const idx = s.val() || 0;
         if(idx >= leerstof.length) {
@@ -230,29 +237,35 @@ function startStudentGame() {
             document.getElementById('options-container').innerHTML = "";
             return;
         }
+        
         const v = leerstof[idx];
         document.getElementById('zin-display').innerText = v.zin;
         document.getElementById('instr').innerText = (v.type === "verband") ? "OVERLEG: Welk verband?" : "OVERLEG: Welk woord op de (...) ?";
         document.getElementById('feedback').innerText = "";
         
-        const cont = document.getElementById('options-container');
-        cont.innerHTML = "";
-        let opts = (globalName.length % 2 === 0) ? [v.correct, v.fout[0]] : [v.fout[1], v.fout[2]];
-        opts.sort().forEach(o => {
-            let b = document.createElement('button');
-            b.innerText = o;
-            b.onclick = () => {
-                if(o === v.correct) {
-                    playSound('sound-correct');
-                    db.ref(`lessen/${globalKlas}/teams/${globalTeam}/score`).transaction(sc => (sc||0)+1);
-                    db.ref(`lessen/${globalKlas}/currentQuestion`).set(idx + 1);
-                } else { 
-                    playSound('sound-wrong');
-                    document.getElementById('feedback').innerText = "FOUT! Vraag je partner."; 
-                    document.getElementById('feedback').style.color = "red";
-                }
-            };
-            cont.appendChild(b);
+        db.ref(`lessen/${globalKlas}/teams/${globalTeam}/members`).once('value', mSnap => {
+            const members = mSnap.val() || [];
+            const isSecond = members.indexOf(globalName) % 2 === 1;
+            let opts = (!isSecond) ? [v.correct, v.fout[0]] : [v.fout[1], v.fout[2]];
+            
+            const cont = document.getElementById('options-container');
+            cont.innerHTML = "";
+            opts.sort().forEach(o => {
+                let b = document.createElement('button');
+                b.innerText = o;
+                b.onclick = () => {
+                    if(o === v.correct) {
+                        playSound('sound-correct');
+                        db.ref(`lessen/${globalKlas}/teams/${globalTeam}/score`).transaction(sc => (sc||0)+1);
+                        db.ref(`lessen/${globalKlas}/currentQuestion`).set(idx + 1);
+                    } else { 
+                        playSound('sound-wrong');
+                        document.getElementById('feedback').innerText = "FOUT! Vraag je partner."; 
+                        document.getElementById('feedback').style.color = "red";
+                    }
+                };
+                cont.appendChild(b);
+            });
         });
     });
 }
@@ -284,8 +297,7 @@ function verdeelTeams(aantal) {
 function resetGame() {
     const klas = document.getElementById('docent-klas').value;
     if(confirm("Dossiers vernietigen voor " + klas + "?")) {
-        db.ref(`lessen/${klas}`).remove();
-        location.reload();
+        db.ref(`lessen/${klas}`).remove().then(() => location.reload());
     }
 }
 
@@ -293,7 +305,7 @@ function updateScoreboardView(klas) {
     const container = document.getElementById('score-table-container');
     db.ref(`lessen/${klas}/teams`).on('value', s => {
         const data = s.val();
-        if(!data) { container.innerHTML = "<p style='text-align:center;'>Geen actieve eenheden.</p>"; return; }
+        if(!data) { container.innerHTML = "<p>Geen actieve eenheden.</p>"; return; }
         let teamsArray = Object.keys(data).map(key => ({ name: key, score: data[key].score || 0 }));
         teamsArray.sort((a, b) => b.score - a.score);
         
