@@ -13,20 +13,21 @@
         .hidden { display: none; }
         h1 { color: var(--p-blue); text-transform: uppercase; text-align: center; letter-spacing: 1px; }
         
-        .zin-box { background: var(--p-blue); color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; font-size: 1.2rem; min-height: 60px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--p-gold); }
+        .zin-box { background: var(--p-blue); color: white; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; font-size: 1.2rem; min-height: 80px; display: flex; align-items: center; justify-content: center; border: 2px solid var(--p-gold); line-height: 1.4; }
         .options { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        button { padding: 15px; cursor: pointer; border: 2px solid var(--p-blue); background: white; color: var(--p-blue); font-weight: bold; border-radius: 6px; transition: 0.2s; }
+        button { padding: 15px; cursor: pointer; border: 2px solid var(--p-blue); background: white; color: var(--p-blue); font-weight: bold; border-radius: 6px; transition: 0.2s; font-size: 1rem; }
         button:hover { background: var(--p-blue); color: white; }
         button:disabled { opacity: 0.5; cursor: not-allowed; }
         button.primary { background: var(--p-blue); color: white; width: 100%; margin-top: 10px; border: none; text-transform: uppercase; padding: 18px; }
         
-        .control-panel { display: flex; gap: 10px; justify-content: center; margin: 20px 0; }
-        .status-badge { background: #eee; padding: 5px 10px; border-radius: 4px; font-size: 0.8rem; }
+        .control-panel { display: flex; gap: 10px; justify-content: center; margin: 20px 0; align-items: center; }
+        input, select { width: 100%; padding: 12px; margin-bottom: 10px; border: 2px solid #ddd; border-radius: 5px; box-sizing: border-box; }
 
         table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
         th, td { padding: 15px; border-bottom: 1px solid #eee; text-align: left; }
         th { background: var(--p-blue); color: white; }
-        .rank-1 { background: #fff9e6; font-weight: bold; }
+        .rank-1 { background: #fff9e6; font-weight: bold; border: 2px solid var(--p-gold); }
+        .instrucitie-tekst { text-align: center; font-style: italic; color: #666; margin-bottom: 5px; }
     </style>
 </head>
 <body>
@@ -45,8 +46,8 @@
     <div id="student-screen" class="card hidden">
         <h1 id="student-title">Aanmelden</h1>
         <div id="student-login-fields">
-            <input type="text" id="student-name" placeholder="Je roepnaam" style="width:100%; padding:12px; margin-bottom:10px;">
-            <select id="klas-select" style="width:100%; padding:12px; margin-bottom:10px;">
+            <input type="text" id="student-name" placeholder="Je roepnaam">
+            <select id="klas-select">
                 <option value="alpha">Eenheid Alpha (A)</option>
                 <option value="bravo">Eenheid Bravo (B)</option>
             </select>
@@ -54,31 +55,31 @@
         </div>
         
         <div id="game-area" class="hidden">
-            <div id="status-row" style="text-align:right; margin-bottom:10px;"></div>
-            <div class="zin-box" id="zin-display">Wachten op de volgende opdracht van de commandant...</div>
+            <p id="vraag-type-instructie" class="instrucitie-tekst"></p>
+            <div class="zin-box" id="zin-display">Wachten op de commandant...</div>
             <div class="options" id="options-container"></div>
-            <div id="feedback" style="text-align:center; margin-top:15px; font-weight:bold;"></div>
+            <div id="feedback" style="text-align:center; margin-top:15px; font-weight:bold; min-height: 20px;"></div>
         </div>
     </div>
 
     <div id="docent-screen" class="card hidden">
         <h1>Command Dashboard</h1>
-        <select id="docent-klas" onchange="initDocent()" style="width:100%; padding:12px;">
+        <select id="docent-klas" onchange="initDocent()">
             <option value="alpha">Eenheid Alpha</option>
             <option value="bravo">Eenheid Bravo</option>
         </select>
         
         <div class="control-panel">
-            <button onclick="changeQuestion(-1)">⬅ Vorige Zin</button>
-            <div id="question-counter" style="align-self: center; font-weight: bold;">Zin: 1 / 40</div>
-            <button onclick="changeQuestion(1)">Volgende Zin ➡</button>
+            <button onclick="changeQuestion(-1)">⬅ Vorige</button>
+            <div id="question-counter" style="font-weight: bold; min-width: 120px; text-align: center;">Zin: 1 / 45</div>
+            <button onclick="changeQuestion(1)">Volgende ➡</button>
         </div>
 
-        <div id="live-monitor">
-            <h3>Actieve Agenten</h3>
-            <div id="presence-list">Wachten op aanmeldingen...</div>
+        <div id="live-monitor" style="margin-top:20px; border-top:1px solid #ddd; padding-top:10px;">
+            <h3>Geregistreerde Agenten:</h3>
+            <div id="presence-list" style="font-style: italic;">Geen agenten actief.</div>
         </div>
-        <button class="primary" onclick="resetGame()" style="background:var(--danger); margin-top:40px;">Sessie Resetten</button>
+        <button class="primary" onclick="resetGame()" style="background:var(--danger); margin-top:40px;">Reset Alle Gegevens</button>
     </div>
 
     <div id="scoreboard-screen" class="card hidden">
@@ -88,7 +89,6 @@
 </div>
 
 <script>
-// --- CONFIG (Same Firebase) ---
 const firebaseConfig = {
     apiKey: "AIzaSyB12mTMBnuxdC4W4htyFO_C7Dnh3maVKew",
     authDomain: "decoroefening.firebaseapp.com",
@@ -101,14 +101,55 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 
-// --- LEERSTOF (Gekopieerd uit origineel) ---
 const leerstof = [
+    // ORIGINELE 5
     { type: "verband", zin: "Eerst zekerden we de plaats delict, daarna startte de recherche het onderzoek.", correct: "Volgorde van tijd", fout: ["Conclusie", "Voorbeeld", "Doel-middel"] },
     { type: "verband", zin: "De verdachte droeg een bivakmuts; daarom konden we hem niet herkennen.", correct: "Oorzaak en gevolg", fout: ["Opsomming", "Voorbeeld", "Doel-middel"] },
     { type: "verband", zin: "De agent trok zijn taser om de vluchtende verdachte te stoppen.", correct: "Doel-middel", fout: ["Conclusie", "Oorzaak en gevolg", "Voorbeeld"] },
     { type: "verband", zin: "De surveillanten controleerden op snelheid, gordels en ook op alcoholgebruik.", correct: "Opsomming", fout: ["Doel-middel", "Oorzaak en gevolg", "Conclusie"] },
     { type: "verband", zin: "Kortom, de inval was een groot succes door de goede voorbereiding.", correct: "Conclusie", fout: ["Volgorde van tijd", "Voorbeeld", "Opsomming"] },
-    // ... (rest van de 40 zinnen uit jouw bron)
+    // 20 VERBANDEN
+    { type: "verband", zin: "De verdachte werd gefouilleerd en tevens werd zijn rugzak gecontroleerd.", correct: "Opsomming", fout: ["Oorzaak en gevolg", "Conclusie", "Doel-middel"] },
+    { type: "verband", zin: "Er was geen braakschade; hieruit volgt dat de dader een sleutel moet hebben gehad.", correct: "Conclusie", fout: ["Volgorde van tijd", "Voorbeeld", "Opsomming"] },
+    { type: "verband", zin: "De officier van justitie eiste een hoge straf, want de verdachte was een recidivist.", correct: "Reden/Verklaring", fout: ["Doel-middel", "Opsomming", "Volgorde van tijd"] },
+    { type: "verband", zin: "Agenten dragen een kogelwerend vest om zichzelf te beschermen tijdens een vuurgevecht.", correct: "Doel-middel", fout: ["Conclusie", "Oorzaak en gevolg", "Voorbeeld"] },
+    { type: "verband", zin: "Door de hevige regenval waren de bandensporen op het delict helaas weggespoeld.", correct: "Oorzaak en gevolg", fout: ["Opsomming", "Doel-middel", "Volgorde van tijd"] },
+    { type: "verband", zin: "Nadat de rechter het vonnis had voorgelezen, werd de veroordeelde afgevoerd.", correct: "Volgorde van tijd", fout: ["Voorbeeld", "Conclusie", "Oorzaak en gevolg"] },
+    { type: "verband", zin: "Sommige drugs zijn verboden, zoals heroïne en cocaïne.", correct: "Voorbeeld", fout: ["Doel-middel", "Opsomming", "Conclusie"] },
+    { type: "verband", zin: "De getuige legde een verklaring af, maar de advocaat trok de betrouwbaarheid in twijfel.", correct: "Tegenstelling", fout: ["Oorzaak en gevolg", "Opsomming", "Doel-middel"] },
+    { type: "verband", zin: "Eerst wordt een proces-verbaal opgemaakt, daarna beoordeelt de officier de zaak.", correct: "Volgorde van tijd", fout: ["Conclusie", "Voorbeeld", "Opsomming"] },
+    { type: "verband", zin: "De politie zette een drone in zodat ze het bosperceel vanuit de lucht konden scannen.", correct: "Doel-middel", fout: ["Oorzaak en gevolg", "Tegenstelling", "Voorbeeld"] },
+    { type: "verband", zin: "De dader liet een vingerafdruk achter; daarom kon hij snel worden geïdentificeerd.", correct: "Oorzaak en gevolg", fout: ["Opsomming", "Volgorde van tijd", "Reden/Verklaring"] },
+    { type: "verband", zin: "Kortom, de preventieve fouilleeractie heeft geleid tot minder wapenbezit op straat.", correct: "Conclusie", fout: ["Voorbeeld", "Opsomming", "Doel-middel"] },
+    { type: "verband", zin: "Tijdens de inval werden drugs, wapens en bovendien vals geld aangetroffen.", correct: "Opsomming", fout: ["Tegenstelling", "Oorzaak en gevolg", "Conclusie"] },
+    { type: "verband", zin: "Hoewel er camerabeelden waren, kon het gezicht van de overvaller niet worden herkend.", correct: "Tegenstelling", fout: ["Volgorde van tijd", "Voorbeeld", "Opsomming"] },
+    { type: "verband", zin: "De hacker werd opgepakt wegens het binnendringen in beveiligde overheidssystemen.", correct: "Reden/Verklaring", fout: ["Doel-middel", "Conclusie", "Opsomming"] },
+    { type: "verband", zin: "Er zijn verschillende geweldsmiddelen, denk aan de wapenstok of de taser.", correct: "Voorbeeld", fout: ["Volgorde van tijd", "Oorzaak en gevolg", "Conclusie"] },
+    { type: "verband", zin: "De rechercheur werkte de hele nacht door om het dossier op tijd af te krijgen.", correct: "Doel-middel", fout: ["Tegenstelling", "Opsomming", "Voorbeeld"] },
+    { type: "verband", zin: "Zodra de verdachte de agenten zag, zette hij het op een lopen.", correct: "Volgorde van tijd", fout: ["Conclusie", "Oorzaak en gevolg", "Doel-middel"] },
+    { type: "verband", zin: "De verdachte weigerde mee te werken; hierdoor verliep de arrestatie moeizaam.", correct: "Oorzaak en gevolg", fout: ["Voorbeeld", "Opsomming", "Tegenstelling"] },
+    { type: "verband", zin: "Samenvattend kunnen we stellen dat er onvoldoende bewijs is voor een veroordeling.", correct: "Conclusie", fout: ["Volgorde van tijd", "Doel-middel", "Reden/Verklaring"] },
+    // 20 GATEN
+    { type: "gat", zin: "De verdachte werd aangehouden ... hij de winkel verliet.", correct: "toen", fout: ["immers", "zodat", "kortom"] },
+    { type: "gat", zin: "De agent gebruikte zijn mobilofoon ... versterking op te roepen.", correct: "om", fout: ["want", "dus", "terwijl"] },
+    { type: "gat", zin: "Het bewijs was onomstotelijk, ... de verdachte bekende niet.", correct: "toch", fout: ["bovendien", "daardoor", "namelijk"] },
+    { type: "gat", zin: "Er was veel schade in de cel, ... een kapotte ruit en een vernielde tafel.", correct: "zoals", fout: ["omdat", "nadat", "dus"] },
+    { type: "gat", zin: "De getuige was bang, ... durfde hij niets te zeggen tegen de recherche.", correct: "daarom", fout: ["ten eerste", "ondanks", "om"] },
+    { type: "gat", zin: "De officier eiste vrijspraak ... een gebrek aan bewijs.", correct: "vanwege", fout: ["terwijl", "zodat", "immers"] },
+    { type: "gat", zin: "De verdachte moet op de zitting verschijnen, ... hij dit nu wil of niet.", correct: "of", fout: ["omdat", "terwijl", "nadat"] },
+    { type: "gat", zin: "We doorzochten de woning ... we toestemming kregen van de rechter-commissaris.", correct: "zodra", fout: ["daarom", "bijvoorbeeld", "dus"] },
+    { type: "gat", zin: "De dader droeg handschoenen, ... er geen vingerafdrukken zijn gevonden.", correct: "waardoor", fout: ["hoewel", "ten tweede", "denk aan"] },
+    { type: "gat", zin: "De politiehelikopter hangt boven de stad ... de voortvluchtige te zoeken.", correct: "om", fout: ["want", "nadat", "immers"] },
+    { type: "gat", zin: "De recherche vond een DNA-match; ... werd de zaak na tien jaar heropend.", correct: "hierdoor", fout: ["ook", "maar", "bijvoorbeeld"] },
+    { type: "gat", zin: "De agent schreef een bekeuring ... de bestuurder door rood reed.", correct: "omdat", fout: ["zodat", "daarna", "terwijl"] },
+    { type: "gat", zin: "U bent verplicht mee te werken; ... wordt u aangehouden wegens belemmering.", correct: "anders", fout: ["ten eerste", "bijvoorbeeld", "immers"] },
+    { type: "gat", zin: "De rechter sloot het onderzoek; ... volgt de uitspraak over twee weken.", correct: "daarna", fout: ["want", "zodat", "immers"] },
+    { type: "gat", zin: "Er werden veel wapens gevonden, ... messen en pepperspray.", correct: "waaronder", fout: ["doordat", "nadat", "dus"] },
+    { type: "gat", zin: "De camerabeelden zijn erg vaag, ... de dader is lastig te herkennen.", correct: "dus", fout: ["hoewel", "want", "om"] },
+    { type: "gat", zin: "De weginspecteur sloot de rijstrook af ... een ernstig ongeluk.", correct: "vanwege", fout: ["zodat", "terwijl", "kortom"] },
+    { type: "gat", zin: "De agent legde de handboeien aan ... hij de verdachte in de auto zette.", correct: "voordat", fout: ["zodat", "om", "daarom"] },
+    { type: "gat", zin: "De verdachte heeft een alibi, ... de recherche gaat door met het onderzoek.", correct: "maar", fout: ["bovendien", "waardoor", "namelijk"] },
+    { type: "gat", zin: "De woninginbraken namen af ... de extra surveillance in de wijk.", correct: "door", fout: ["toen", "kortom", "zo"] }
 ];
 
 let globalName, globalKlas, currentQIndex = 0;
@@ -121,18 +162,19 @@ function initRole(role) {
     if(role === 'scoreboard') updateScoreboardView('alpha');
 }
 
-// --- STUDENT LOGIC ---
 function loginStudent() {
     globalName = document.getElementById('student-name').value.trim();
     globalKlas = document.getElementById('klas-select').value;
     if(!globalName) return alert("Voer je roepnaam in!");
     
-    db.ref(`lessen/${globalKlas}/scores/${globalName}`).set(0);
+    db.ref(`lessen/${globalKlas}/scores/${globalName}`).once('value', s => {
+        if(!s.exists()) db.ref(`lessen/${globalKlas}/scores/${globalName}`).set(0);
+    });
+
     document.getElementById('student-login-fields').classList.add('hidden');
     document.getElementById('student-title').innerText = "Agent: " + globalName;
     document.getElementById('game-area').classList.remove('hidden');
 
-    // Luister naar welke vraag de docent aanbiedt
     db.ref(`lessen/${globalKlas}/currentQuestion`).on('value', s => {
         currentQIndex = s.val() || 0;
         hasAnsweredCurrent = false;
@@ -143,6 +185,9 @@ function loginStudent() {
 function renderQuestion() {
     const v = leerstof[currentQIndex];
     const cont = document.getElementById('options-container');
+    const instr = document.getElementById('vraag-type-instructie');
+    
+    instr.innerText = v.type === "verband" ? "Welk tekstverband wordt hier gebruikt?" : "Welk structuurwoord hoort op de plek van de puntjes?";
     document.getElementById('zin-display').innerText = v.zin;
     document.getElementById('feedback').innerText = "";
     cont.innerHTML = "";
@@ -155,15 +200,13 @@ function renderQuestion() {
         b.onclick = () => {
             if(hasAnsweredCurrent) return;
             if(o === v.correct) {
-                const sCorrect = document.getElementById('sound-correct');
-                sCorrect.currentTime = 0; sCorrect.play().catch(()=>{});
+                document.getElementById('sound-correct').play().catch(()=>{});
                 db.ref(`lessen/${globalKlas}/scores/${globalName}`).transaction(sc => (sc||0)+1);
                 document.getElementById('feedback').innerText = "CORRECT!";
                 document.getElementById('feedback').style.color = "green";
             } else {
-                const sWrong = document.getElementById('sound-wrong');
-                sWrong.currentTime = 0; sWrong.play().catch(()=>{});
-                document.getElementById('feedback').innerText = "ONJUIST! Het juiste antwoord was: " + v.correct;
+                document.getElementById('sound-wrong').play().catch(()=>{});
+                document.getElementById('feedback').innerText = "FOUT! Juiste antwoord: " + v.correct;
                 document.getElementById('feedback').style.color = "red";
             }
             hasAnsweredCurrent = true;
@@ -173,12 +216,11 @@ function renderQuestion() {
     });
 }
 
-// --- DOCENT LOGIC ---
 function initDocent() {
     const klas = document.getElementById('docent-klas').value;
     db.ref(`lessen/${klas}/currentQuestion`).on('value', s => {
         currentQIndex = s.val() || 0;
-        document.getElementById('question-counter').innerText = `Zin: ${currentQIndex + 1} / ${leerstof.length}`;
+        document.getElementById('question-counter').innerText = `Zin: ${currentQIndex + 1} / 45`;
     });
 
     db.ref(`lessen/${klas}/scores`).on('value', s => {
@@ -197,22 +239,21 @@ function changeQuestion(delta) {
 
 function resetGame() {
     const klas = document.getElementById('docent-klas').value;
-    if(confirm("Alle scores en voortgang wissen?")) {
+    if(confirm("Alle resultaten wissen en terug naar zin 1?")) {
         db.ref(`lessen/${klas}`).remove().then(() => location.reload());
     }
 }
 
-// --- SCOREBOARD ---
 function updateScoreboardView(klas) {
     const container = document.getElementById('score-table-container');
     db.ref(`lessen/${klas}/scores`).on('value', s => {
         const data = s.val();
-        if(!data) { container.innerHTML = "<p>Wachten op resultaten...</p>"; return; }
+        if(!data) { container.innerHTML = "<p>Wachten op agenten...</p>"; return; }
         
         let arr = Object.keys(data).map(name => ({ name: name, score: data[name] }));
         arr.sort((a, b) => b.score - a.score);
         
-        let html = "<table><tr><th>Rang</th><th>Agent</th><th>Punten</th></tr>";
+        let html = "<table><tr><th>Rang</th><th>Agent</th><th>Score</th></tr>";
         arr.forEach((p, i) => {
             html += `<tr class="${i===0?'rank-1':''}"><td>#${i+1}</td><td>${p.name}</td><td>${p.score}</td></tr>`;
         });
